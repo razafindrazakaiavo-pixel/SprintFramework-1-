@@ -109,7 +109,7 @@ public class FrontControllerServlet extends HttpServlet {
             }
         }
     }
-
+// sprint 1 
     private void registerIfController(String className) throws ClassNotFoundException, InstantiationException,
             IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         Class<?> clazz = Class.forName(className);
