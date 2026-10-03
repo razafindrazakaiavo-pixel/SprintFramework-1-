@@ -44,6 +44,8 @@ public class FrontControllerListener implements ServletContextListener {
             viewSuffix = ".jsp";
         }
 
+        
+
         Map<Mapping, List<FrontControllerServlet.MethodInfo>> urlMappings = new HashMap<>();
 
         try {
