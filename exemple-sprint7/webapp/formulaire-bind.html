@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Formulaire Sprint 7 / 7b - Binding</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; }
+        .bloc { border: 1px solid #ccc; padding: 1em; margin-bottom: 2em; max-width: 500px; }
+        label { display: block; margin-top: 0.5em; }
+        input { width: 100%; padding: 0.4em; }
+        button { margin-top: 1em; padding: 0.6em 1.2em; }
+        code { background: #f4f4f4; padding: 0.2em 0.4em; }
+    </style>
+</head>
+<body>
+
+<h1>Tests Binding - Sprint 7 et 7b</h1>
+
+<!-- ================= SPRINT 7 : @Param simple (GET) ================= -->
+<div class="bloc">
+    <h2>Sprint 7 : /bind-simple (GET, @Param)</h2>
+    <p>Binding + conversion <code>String -&gt; int / double / boolean / Date</code></p>
+    <p>URL directe : <code>?nom=Loyard&amp;age=25&amp;moyenne=15.5&amp;boursier=true&amp;inscription=2026-09-30</code></p>
+
+    <form action="bind-simple" method="GET">
+        <label>Nom :
+            <input type="text" name="nom" value="Loyard" required>
+        </label>
+        <label>Age (int) :
+            <input type="number" name="age" value="25" required>
+        </label>
+        <label>Moyenne (double) :
+            <input type="number" step="0.01" name="moyenne" value="15.5" required>
+        </label>
+        <label>Boursier (boolean) :
+            <input type="checkbox" name="boursier" value="true" checked> true si coché
+        </label>
+        <label>Inscription (java.sql.Date yyyy-MM-dd) :
+            <input type="date" name="inscription" value="2026-09-30" required>
+        </label>
+        <button type="submit">Tester Sprint 7</button>
+    </form>
+</div>
+
+<!-- ================= SPRINT 7b : @ParamObject (POST) ================= -->
+<div class="bloc">
+    <h2>Sprint 7b : /bind-objet (POST, @ParamObject)</h2>
+    <p>Binding via <code>etudiant.nom, etudiant.age, ...</code> + validation
+        <code>@Required, @Numeric, @Range, @DateFormat</code></p>
+
+    <form action="bind-objet" method="POST">
+        <label>Nom (@Required) :
+            <input type="text" name="etudiant.nom" value="Loyard" required>
+        </label>
+        <label>Age (@Numeric + @Range 0-150) :
+            <input type="number" name="etudiant.age" value="25" required>
+        </label>
+        <label>Date naissance (@DateFormat yyyy-MM-dd) :
+            <input type="date" name="etudiant.dateNaissance" value="2000-05-10" required>
+        </label>
+        <label>Email (@Required) :
+            <input type="email" name="etudiant.email" value="loyard@test.mg" required>
+        </label>
+        <button type="submit">Tester Sprint 7b</button>
+    </form>
+</div>
+
+<!-- ================= Cas erreur : @RequestParam ================= -->
+<div class="bloc">
+    <h2>Cas erreur : /bind-requestparam (attendu ETU002391)</h2>
+    <p><code>@RequestParam</code> (Spring) n'est PAS supporté. Utilisez <code>@Param</code>.</p>
+    <form action="bind-requestparam" method="GET">
+        <label>Nom :
+            <input type="text" name="nom" value="Loyard">
+        </label>
+        <button type="submit">Tester (version @Param OK)</button>
+    </form>
+    <p>Pour voir <code>ETU002391</code> : remplacez <code>@Param</code> par
+        <code>@RequestParam</code> dans <code>BindingController.requestParamDemo</code> puis rappelez cette URL.</p>
+</div>
+
+</body>
+</html>
