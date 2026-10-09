@@ -6,8 +6,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 // Sprint 7 : binding simple + conversion String -> int/double/boolean/Date
-// Ex : public String simple(@Param(name = "nom") String nom, @Param(name = "age") int age, ...)
-@Target(ElementType.PARAMETER)
+// - sur paramètre : public String simple(@Param(name = "nom") String nom, ...)
+//   @Param("nom") et @Param(value = "nom") aussi acceptés
+// - sur champ (compat ancien style Employe) : @Param("nom") private String nom;
+@Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Param {
     String name() default "";

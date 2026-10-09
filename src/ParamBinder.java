@@ -118,11 +118,27 @@ public class ParamBinder {
         }
 
         for (Field f : getAllFields(clazz)) {
-            String keyPrefixed = prefix + "." + f.getName();
+            // compat ancien style : @Param("nom") sur champ -> nom HTTP personnalisé
+            String fieldName = f.getName();
+            Param fp = f.getAnnotation(Param.class);
+            if (fp != null) {
+                String cn = !fp.name().isBlank() ? fp.name() : fp.value();
+                if (!cn.isBlank()) {
+                    fieldName = cn;
+                }
+            }
+            String keyPrefixed = prefix + "." + fieldName;
             String raw = req.getParameter(keyPrefixed);
             // tolérance : accepte aussi sans préfixe (ex : ?nom=... au lieu de ?etudiant.nom=...)
             if (raw == null) {
-                raw = req.getParameter(f.getName());
+                raw = req.getParameter(fieldName);
+            }
+            // dernier fallback : nom du champ Java si @Param renomme
+            if (raw == null && !fieldName.equals(f.getName())) {
+                raw = req.getParameter(prefix + "." + f.getName());
+                if (raw == null) {
+                    raw = req.getParameter(f.getName());
+                }
             }
             if (raw == null) {
                 continue; // champ absent -> reste null / 0, @Required s'en chargera
