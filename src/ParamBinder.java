@@ -70,7 +70,7 @@ public class ParamBinder {
         for (Annotation a : p.getAnnotations()) {
             if (a.annotationType().getSimpleName().equals("RequestParam")) {
                 throw new BindingException(
-                    "ETU002391 : @RequestParam non supporte par le framework. "
+                    "ETU004384 : @RequestParam non supporte par le framework. "
                     + "Utilisez @Param(name=\"...\") (Sprint 7) ou @ParamObject(name=\"...\") (Sprint 7b) "
                     + "sur " + method.getDeclaringClass().getSimpleName() + "." + method.getName()
                     + " param[" + p.getName() + "].");
