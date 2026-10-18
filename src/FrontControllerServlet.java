@@ -9,11 +9,18 @@ import java.util.Map;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import src.annotation.UrlApi;
 
+// Sprint 8 : active le parsing multipart de Tomcat (request.getPart(...)).
+@MultipartConfig(
+    fileSizeThreshold = 1024 * 1024,
+    maxFileSize = 1024 * 1024 * 20,
+    maxRequestSize = 1024 * 1024 * 25
+)
 public class FrontControllerServlet extends HttpServlet {
 
     @SuppressWarnings("unchecked")

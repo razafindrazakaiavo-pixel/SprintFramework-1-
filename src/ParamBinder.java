@@ -1,5 +1,7 @@
 package src;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -15,6 +17,7 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 import src.annotation.DateFormat;
 import src.annotation.Numeric;
 import src.annotation.Param;
@@ -40,6 +43,12 @@ public class ParamBinder {
             if (type.isAssignableFrom(HttpServletResponse.class)) { args[i] = res; continue; }
             if (type.isAssignableFrom(HttpSession.class)) { args[i] = req.getSession(); continue; }
 
+            // Sprint 8 : upload multipart -> FileUpload injecté tel quel
+            if (type == FileUpload.class) {
+                args[i] = resolveFileUpload(p, req);
+                continue;
+            }
+
             rejectRequestParam(method, p);
 
             Param paramAnn = p.getAnnotation(Param.class);
@@ -61,7 +70,7 @@ public class ParamBinder {
                 "Parametre non annote sur " + method.getDeclaringClass().getSimpleName()
                 + "." + method.getName() + "() param[" + i + " " + type.getSimpleName() + " " + p.getName() + "] : "
                 + "ajoutez @Param(name=\"...\") (Sprint 7), @ParamObject(name=\"...\") (Sprint 7b), "
-                + "ou HttpServletRequest/Response/Session.");
+                + "FileUpload (Sprint 8), ou HttpServletRequest/Response/Session.");
         }
         return args;
     }
@@ -99,6 +108,80 @@ public class ParamBinder {
     private static String prefixOf(ParamObject ann, Class<?> type) {
         String prefix = !ann.name().isBlank() ? ann.name() : ann.value();
         return prefix.isBlank() ? decapitalize(type.getSimpleName()) : prefix;
+    }
+
+    // ---------- Binding multipart (Sprint 8) ----------
+
+    private static FileUpload resolveFileUpload(Parameter p, HttpServletRequest req) throws Exception {
+        String fieldName = fileParamName(p);
+
+        String contentType = req.getContentType();
+        if (contentType == null || !contentType.toLowerCase().startsWith("multipart/")) {
+            throw new BindingException(
+                "Parametre \"" + fieldName + "\" de type FileUpload : la requete n'est pas "
+                + "multipart/form-data. Ajoutez enctype=\"multipart/form-data\" au formulaire "
+                + "et @MultipartConfig sur le servlet.");
+        }
+
+        Part part;
+        try {
+            part = req.getPart(fieldName);
+        } catch (Exception e) {
+            throw new BindingException(
+                "Impossible de lire la partie multipart \"" + fieldName + "\" : " + e.getMessage(), e);
+        }
+        if (part == null) {
+            return null;
+        }
+
+        String submitted = part.getSubmittedFileName();
+        byte[] content = readAll(part);
+
+        FileUpload file = new FileUpload();
+        file.setFieldName(fieldName);
+        file.setFileName(submitted);
+        file.setExtension(extensionOf(submitted));
+        file.setContentType(part.getContentType());
+        file.setContent(content);
+
+        file.getMetadata().put("fieldName", fieldName);
+        file.getMetadata().put("fileName", submitted);
+        file.getMetadata().put("extension", file.getExtension());
+        file.getMetadata().put("contentType", part.getContentType());
+        file.getMetadata().put("size", (long) content.length);
+        return file;
+    }
+
+    private static String fileParamName(Parameter p) {
+        Param ann = p.getAnnotation(Param.class);
+        if (ann != null) {
+            String n = !ann.name().isBlank() ? ann.name() : ann.value();
+            if (!n.isBlank()) {
+                return n;
+            }
+        }
+        String name = p.getName();
+        if (name == null || name.isBlank() || name.startsWith("arg")) {
+            return "filemap";
+        }
+        return name;
+    }
+
+    private static String extensionOf(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
+        int dot = fileName.lastIndexOf('.');
+        if (dot < 0 || dot == fileName.length() - 1) {
+            return "";
+        }
+        return fileName.substring(dot + 1).toLowerCase();
+    }
+
+    private static byte[] readAll(Part part) throws IOException {
+        try (InputStream in = part.getInputStream()) {
+            return in.readAllBytes();
+        }
     }
 
     // ---------- Binding objet ----------
