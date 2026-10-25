@@ -14,6 +14,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import src.annotation.UrlApi;
+import src.annotation.Authenticated;
+import src.annotation.RolesAllowed;
 
 // Sprint 8 : active le parsing multipart de Tomcat (request.getPart(...)).
 @MultipartConfig(
@@ -112,6 +114,16 @@ public void processRequest(HttpServletRequest req, HttpServletResponse res)
         try {
 
             for (MethodInfo methodInfo : methodInfos) {
+                int accessStatus = accessStatus(methodInfo, req);
+                if (accessStatus != HttpServletResponse.SC_OK) {
+                    res.setStatus(accessStatus);
+                    res.setContentType("text/plain;charset=UTF-8");
+                    res.getWriter().print(accessStatus == HttpServletResponse.SC_UNAUTHORIZED
+                            ? "Authentification requise."
+                            : "Acces refuse : role insuffisant.");
+                    return;
+                }
+
                 Object[] args;
                 try {
                     args = ParamBinder.resolveMethodArgs(methodInfo.method, req, res);
@@ -210,5 +222,28 @@ public void processRequest(HttpServletRequest req, HttpServletResponse res)
             }
         }
     }
+}
+
+/** Uses the servlet container's authenticated principal and role mapping. */
+private int accessStatus(MethodInfo info, HttpServletRequest req) {
+    RolesAllowed methodRoles = info.method.getAnnotation(RolesAllowed.class);
+    RolesAllowed classRoles = info.controllerClass.getAnnotation(RolesAllowed.class);
+    RolesAllowed roles = methodRoles != null ? methodRoles : classRoles;
+    boolean requiresAuthentication = info.method.isAnnotationPresent(Authenticated.class)
+            || info.controllerClass.isAnnotationPresent(Authenticated.class)
+            || roles != null;
+
+    if (requiresAuthentication && req.getUserPrincipal() == null) {
+        return HttpServletResponse.SC_UNAUTHORIZED;
+    }
+    if (roles != null) {
+        for (String role : roles.value()) {
+            if (role != null && !role.isBlank() && req.isUserInRole(role)) {
+                return HttpServletResponse.SC_OK;
+            }
+        }
+        return HttpServletResponse.SC_FORBIDDEN;
+    }
+    return HttpServletResponse.SC_OK;
 }
 }
