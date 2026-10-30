@@ -24,6 +24,7 @@ import src.annotation.Param;
 import src.annotation.ParamObject;
 import src.annotation.Range;
 import src.annotation.Required;
+import src.annotation.SessionAttribute;
 
 // Sprint 7 : @Param simple + conversion.
 // Sprint 7b : @ParamObject(prefix) + validation (@Required, @Numeric, @Range, @DateFormat).
@@ -42,6 +43,35 @@ public class ParamBinder {
             if (type.isAssignableFrom(HttpServletRequest.class)) { args[i] = req; continue; }
             if (type.isAssignableFrom(HttpServletResponse.class)) { args[i] = res; continue; }
             if (type.isAssignableFrom(HttpSession.class)) { args[i] = req.getSession(); continue; }
+
+            SessionAttribute sessionAnn = p.getAnnotation(SessionAttribute.class);
+            if (sessionAnn != null) {
+                String name = !sessionAnn.name().isBlank() ? sessionAnn.name() : sessionAnn.value();
+                if (name.isBlank()) {
+                    name = p.getName();
+                }
+                Object value = req.getSession().getAttribute(name);
+                if (value == null) {
+                    if (sessionAnn.required()) {
+                        throw new BindingException("Attribut de session manquant : \"" + name + "\"");
+                    }
+                    args[i] = defaultSessionValue(type);
+                } else if (type.isInstance(value)) {
+                    args[i] = value;
+                } else if (value instanceof String) {
+                    try {
+                        args[i] = convert((String) value, type, name, null);
+                    } catch (Exception e) {
+                        throw new BindingException("Attribut de session \"" + name
+                            + "\" incompatible avec le type " + type.getSimpleName() + " : " + e.getMessage(), e);
+                    }
+                } else {
+                    throw new BindingException("Attribut de session \"" + name
+                        + "\" de type " + value.getClass().getSimpleName()
+                        + " incompatible avec le type " + type.getSimpleName());
+                }
+                continue;
+            }
 
             // Sprint 8 : upload multipart -> FileUpload injecté tel quel
             if (type == FileUpload.class) {
@@ -70,9 +100,22 @@ public class ParamBinder {
                 "Parametre non annote sur " + method.getDeclaringClass().getSimpleName()
                 + "." + method.getName() + "() param[" + i + " " + type.getSimpleName() + " " + p.getName() + "] : "
                 + "ajoutez @Param(name=\"...\") (Sprint 7), @ParamObject(name=\"...\") (Sprint 7b), "
-                + "FileUpload (Sprint 8), ou HttpServletRequest/Response/Session.");
+                + "@SessionAttribute, FileUpload (Sprint 8), ou HttpServletRequest/Response/Session.");
         }
         return args;
+    }
+
+    private static Object defaultSessionValue(Class<?> type) {
+        if (!type.isPrimitive()) return null;
+        if (type == boolean.class) return false;
+        if (type == char.class) return '\0';
+        if (type == byte.class) return (byte) 0;
+        if (type == short.class) return (short) 0;
+        if (type == int.class) return 0;
+        if (type == long.class) return 0L;
+        if (type == float.class) return 0F;
+        if (type == double.class) return 0D;
+        return null;
     }
 
     private static void rejectRequestParam(Method method, Parameter p) {
