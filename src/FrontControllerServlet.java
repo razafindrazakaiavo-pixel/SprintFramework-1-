@@ -24,7 +24,7 @@ import src.annotation.RolesAllowed;
     maxFileSize = 1024 * 1024 * 20,
     maxRequestSize = 1024 * 1024 * 25
 )
-//Sprint 11 : instance Singleton
+
 @WebServlet(name = "FrontController", urlPatterns = "/*", loadOnStartup = 1)
 public class FrontControllerServlet extends HttpServlet {
 
@@ -40,7 +40,7 @@ public class FrontControllerServlet extends HttpServlet {
     static class MethodInfo {
         Class<?> controllerClass;
         Method method;
-        Object controllerInstance;
+        Object controllerInstance;//sprint 11: instance singleton
 
         MethodInfo(Class<?> controllerClass, Method method,
              Object controllerInstance) {
