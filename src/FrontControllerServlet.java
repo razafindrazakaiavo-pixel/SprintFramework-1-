@@ -10,6 +10,7 @@ import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,6 +24,8 @@ import src.annotation.RolesAllowed;
     maxFileSize = 1024 * 1024 * 20,
     maxRequestSize = 1024 * 1024 * 25
 )
+//Sprint 11 : instance Singleton
+@WebServlet(name = "FrontController", urlPatterns = "/*", loadOnStartup = 1)
 public class FrontControllerServlet extends HttpServlet {
 
     @SuppressWarnings("unchecked")

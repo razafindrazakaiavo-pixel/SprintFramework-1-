@@ -121,6 +121,7 @@ public class FrontControllerListener implements ServletContextListener {
             IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         Class<?> clazz = Class.forName(className);
 
+        //sprint 11: instance singleton
         if (clazz.isAnnotationPresent(Controller.class)) {
             Object controllerInstance = clazz.getDeclaredConstructor().newInstance();
             Method[] methods = clazz.getDeclaredMethods();
